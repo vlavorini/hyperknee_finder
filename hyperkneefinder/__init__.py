@@ -1,1 +1,1 @@
-from .hyperkneefinder import HyperkneeFinder
+from .hyperkneefinder import HyperKneeFinder
