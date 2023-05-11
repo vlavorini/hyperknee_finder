@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import Union, Optional
 from sklearn.linear_model import LinearRegression
+from .pseudo_convexity import calc_pseudo_convexity
 
 
 class HyperKneeFinder:
@@ -101,7 +102,7 @@ class HyperKneeFinder:
 
         return self.__independent_data, self.__dependent_data
 
-    def __get_fitted_plane(self):
+    def __get_fitted_plane_model(self):
         """Fit the Linear Model to find the plane which minimize the variance"""
         if self.__model is None:
             independent_data, dependent_data = self.__reshape_data()
@@ -115,11 +116,21 @@ class HyperKneeFinder:
         Translate the fitted plane to let it pass by the very first point, p0
         """
         if self.__translated_plane_data is None:
-            model = self.__get_fitted_plane()
+            model = self.__get_fitted_plane_model()
 
+            # the vector normal to the fitted plane
             v_n = np.array([model.coef_[0], model.coef_[1], -1])
-            p0 = [self.X[0], self.Y[0], self.Z[0, 0]]
-            ps_intercept = np.sum(v_n * p0)
+
+            # the pseudo-convexity of the curve
+            p_conv = calc_pseudo_convexity(self.X, self.Y, self.Z.T)
+
+            # the first point of the curve, shifted by a good amount
+            p0_shifted = [self.X[0], self.Y[0], self.Z[0, 0] - p_conv * (
+                        self.Z.max() - self.Z.min())]
+
+            # the projection of the normal vector to the vector passing by the shifted first point of the curve
+            ps_intercept = np.sum(
+                v_n * p0_shifted)
             factor_x = model.coef_[0]
             factor_y = model.coef_[1]
             new_intercept = -ps_intercept
