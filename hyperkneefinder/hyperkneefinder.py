@@ -21,14 +21,14 @@ class HyperKneeFinder:
     def __init__(self, data_x: Union[list, np.ndarray], data_y: Union[list, np.ndarray],
                  data_z: np.ndarray,
                  name_x: Optional[str] = None, name_y: Optional[str] = None,
-                 clean_data: bool = True):
+                 clean_data: bool = True, clean_threshold: float = 0.8):
         self.X = data_x
         self.Y = data_y
         if name_x is not None and name_y is not None:
             self.name_x = name_x
             self.name_y = name_y
         if clean_data:
-            self.__clean_data(data_z)
+            self.__clean_data(data_z, threshold=clean_threshold)
         else:
             self.Z = data_z.T
 
