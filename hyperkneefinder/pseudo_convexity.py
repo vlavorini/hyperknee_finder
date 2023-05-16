@@ -43,4 +43,4 @@ def calc_pseudo_convexity(x: np.ndarray, y: np.ndarray, z: np.ndarray) -> float:
         z_ = z[:, i]
         dc = calc_dc(x, z_)
         all_dc.extend(dc)
-    return np.sign(np.mean(all_dc))
+    return np.sign(np.median(all_dc))
