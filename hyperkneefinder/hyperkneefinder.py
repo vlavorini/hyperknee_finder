@@ -5,15 +5,26 @@ from sklearn.linear_model import LinearRegression
 from .pseudo_convexity import calc_pseudo_convexity
 
 
+def put_in_shape(x, y, z):
+    xx, yy = np.meshgrid(x, y)
+
+    independent_data = np.array(
+        [[xx[i, j], yy[i, j]] for i in range(xx.shape[0]) for j in range(xx.shape[1])]).flatten().reshape(
+        (len(x) * len(y), 2))
+
+    dependent_data = z.flatten()
+    return independent_data, dependent_data
+
+
 class HyperKneeFinder:
     """
     hyperKnee point finder.
     TIt's about a tool for optimizing two inter-dependent parameters
     """
-    __xx = None
-    __yy = None
     __independent_data = None
     __dependent_data = None
+    __independent_data_cut = None
+    __dependent_data_cut = None
     __model = None
     __translated_plane_data = None
     Z = None
@@ -81,28 +92,35 @@ class HyperKneeFinder:
         self.Z = new_z[:last_good_row, :].T
         self.X = self.X[:last_good_row]
 
-    def __get_meshgrid(self):
-        self.__xx, self.__yy = np.meshgrid(self.X, self.Y)
-        return self.__xx, self.__yy
-
-    def __reshape_data(self):
+    def __reshape_data(self, only_internal: bool = False):
         """
-        Shape the data to be fed to the Linear Model
+        Shape the data as independent (X and Y) and dependent (Z) for convenience of the Linear model
+        which will be used.
+
+        The "only_internal" parameter is used
         """
-        if self.__independent_data is None or self.__dependent_data is None:
-            xx, yy = self.__get_meshgrid()
+        if only_internal is False:
+            if self.__independent_data is None or self.__dependent_data is None:
+                self.__independent_data, self.__dependent_data = put_in_shape(self.X, self.Y, self.Z)
 
-            independent_data = np.array(
-                [[xx[i, j], yy[i, j]] for i in range(xx.shape[0]) for j in range(xx.shape[1])]).flatten().reshape(
-                (len(self.X) * len(self.Y), 2))
+            return self.__independent_data, self.__dependent_data
+        else:
+            if self.__independent_data_cut is None or self.__dependent_data_cut is None:
+                # todo check https://towardsdatascience.com/machine-learning-birch-clustering-algorithm-clearly-explained-fb9838cbeed9
+                start_x = int(len(self.X) / 4)
+                stop_x = int(3 * len(self.X) / 4)
+                slice_x = self.X[start_x:stop_x]
 
-            dependent_data = self.Z.flatten()
-            self.__independent_data = independent_data
-            self.__dependent_data = dependent_data
+                start_y = int(len(self.Y) / 4)
+                stop_y = int(3 * len(self.Y) / 4)
+                slice_y = self.Y[start_y:stop_y]
 
-        return self.__independent_data, self.__dependent_data
+                slice_z = self.Z.T[start_x:stop_x, start_y:stop_y]
+                self.__independent_data_cut, self.__dependent_data_cut = put_in_shape(slice_x, slice_y, slice_z)
 
-    def __get_fitted_plane_model(self):
+            return self.__independent_data_cut, self.__dependent_data_cut
+
+    def get_fitted_plane_model(self):
         """Fit the Linear Model to find the plane which minimize the variance"""
         if self.__model is None:
             independent_data, dependent_data = self.__reshape_data()
@@ -113,16 +131,17 @@ class HyperKneeFinder:
 
     def __translate_plane(self):
         """
-        Translate the fitted plane to let it pass by the very first point, p0
+
         """
         if self.__translated_plane_data is None:
-            model = self.__get_fitted_plane_model()
+            model = self.get_fitted_plane_model()
 
             # the vector normal to the fitted plane
             v_n = np.array([model.coef_[0], model.coef_[1], -1])
 
             # the pseudo-convexity of the curve
-            p_conv = calc_pseudo_convexity(self.X, self.Y, self.Z.T)
+            part_dists = self.__cal_distance(all_data=False)
+            p_conv = -1 * np.sign(np.mean(part_dists))
 
             # the first point of the curve, shifted by a good amount
             p0_shifted = [self.X[0], self.Y[0], self.Z[0, 0] - p_conv * (
@@ -138,24 +157,49 @@ class HyperKneeFinder:
             self.__translated_plane_data = factor_x, factor_y, new_intercept, v_n
         return self.__translated_plane_data
 
-    def __cal_distance(self):
-        """Calculate the distance from each data point to the translated plane"""
-        factor_x, factor_y, new_intercept, v_n = self.__translate_plane()
-        independent_data, dependent_data = self.__reshape_data()
+    def __get_plane_data(self,  what: str = 'translated'):
+        """
+        Getting the data for the plane: a, b, intercept, normal vector
+        """
+        if what == 'translated':
+            return self.__translate_plane()
+        elif what == 'fitted':
+            model = self.get_fitted_plane_model()
+            v_n = np.array([model.coef_[0], model.coef_[1], -1])
+            return model.coef_[0], model.coef_[1], model.intercept_, v_n
+        else:
+            raise ValueError(f"unexpected value for 'what' parameter: {what}")
+
+    def __cal_distance(self, all_data: bool = True):
+        """Calculate the distance from each data point to the proper plane.
+
+        if all_data is false, only the central part of the data is considered. This is
+        used for finding the pseudo-convexity of the curve
+        """
+
+        if all_data:
+            independent_data, dependent_data = self.__reshape_data()
+            factor_x, factor_y, intercept, v_n = self.__get_plane_data()
+        else:
+            independent_data, dependent_data = self.__reshape_data(only_internal=True)
+            factor_x, factor_y, intercept, v_n = self.__get_plane_data(what='fitted')
 
         dist_1 = independent_data * v_n[:2]
         dist_2 = dependent_data * v_n[2]
 
         dist_comb = np.concatenate((dist_1, np.expand_dims(dist_2, axis=1)), axis=1)
-        dist_tot = np.abs(np.sum(dist_comb, axis=1) + new_intercept)
+        dist_tot = np.sum(dist_comb, axis=1) + intercept
 
-        return dist_tot
+        if all_data:
+            return np.abs(dist_tot)
+        else:
+            return dist_tot
 
     def __max_dist_from_plane(self):
         """
         The maximum distance of the given data to the translated plane
         """
-        dist_tot = self.__cal_distance()
+        dist_tot = self.__cal_distance(all_data=True)
 
         knee_point_at = np.argmax(dist_tot)
 
@@ -190,7 +234,7 @@ class HyperKneeFinder:
 
     def visualise_hyperknee(self):
         knee_point_at = self.__max_dist_from_plane()
-        xx, yy = self.__get_meshgrid()
+        xx, yy = np.meshgrid(self.X, self.Y)
         independent_data, dependent_data = self.__reshape_data()
         xp, yp, zp = self.__calculate_plane_points()
 
