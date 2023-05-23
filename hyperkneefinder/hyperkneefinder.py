@@ -42,9 +42,14 @@ class HyperKneeFinder:
         else:
             self.Z = data_z.T
 
-    def __clean_data(self, data_z: np.ndarray, threshold: float = 0.8):
+    def __clean_data(self, data_z: np.ndarray, threshold: float = 0.75):
         """
-        Clean the data by ignoring the simil-plateau at the end of the matrix
+        Clean the data by ignoring the simil-plateau at the end of the matrix.
+
+        The threshold represents the limit under which two points are considered belonging to the same simil-plateau.
+        Note that only rows and columns where ALL the values falls behind that threshold will be deleted,
+        i.e. two points in the same axis with similar values will be kept if the other points in the same row/column
+        are not set as to be deleted.
         """
         max_distances = np.zeros_like(data_z)
 
