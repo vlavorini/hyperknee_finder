@@ -2,9 +2,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import Union, Optional
 from sklearn.linear_model import LinearRegression
+import warnings
 
 
-def put_in_shape(x, y, z):
+def put_in_shape(x: np.ndarray, y: np.ndarray, z: np.ndarray) -> (np.ndarray, np.ndarray):
+    """
+    this function will reshape the data as to have X, Y as independent data, and Z as dependent data.
+    """
     xx, yy = np.meshgrid(x, y)
 
     independent_data = np.array(
@@ -13,6 +17,16 @@ def put_in_shape(x, y, z):
 
     dependent_data = z.flatten()
     return independent_data, dependent_data
+
+
+def integer_or_float(v: float) -> [int, float]:
+    v_c = np.ceil(v)
+    if np.isclose(v, v_c):
+        return int(v_c)
+    v_c = np.floor(v)
+    if np.isclose(v, v_c):
+        return int(v_c)
+    return v
 
 
 class HyperKneeFinder:
@@ -32,6 +46,9 @@ class HyperKneeFinder:
                  data_z: np.ndarray,
                  name_x: Optional[str] = None, name_y: Optional[str] = None,
                  clean_data: bool = True, clean_threshold: float = 0.75):
+        if clean_threshold != 0.75 and clean_data is False:
+            warnings.warn("You set both clean_data=False and a value for clean_threshold."
+                          "Note that the clean_threshold value will be ignored")
         self.X = data_x
         self.Y = data_y
         if name_x is not None and name_y is not None:
@@ -84,7 +101,10 @@ class HyperKneeFinder:
         cols2delete = to_delete.sum(axis=0) == to_delete.shape[0]
 
         # will delete all the columns after the first where all the values are True
-        last_good_column = np.argwhere(cols2delete)[0][0] - 1
+        try:
+            last_good_column = np.argwhere(cols2delete)[0][0] - 1
+        except IndexError:
+            raise ValueError ("No data available after cleaning phase. Try to change the 'clean_threshold' value.")
         new_z = data_z[:, :last_good_column]
         self.Y = self.Y[:last_good_column]
 
@@ -126,7 +146,7 @@ class HyperKneeFinder:
 
             return self.__independent_data_cut, self.__dependent_data_cut
 
-    def get_fitted_plane_model(self):
+    def __get_fitted_plane_model(self):
         """Fit with a Linear Model to find the plane which minimize the variance"""
         if self.__model is None:
             independent_data, dependent_data = self.__reshape_data()
@@ -140,7 +160,7 @@ class HyperKneeFinder:
         This function will shift the fitted plane of a decent amount in the direction of the convexity.
         """
         if self.__shifted_plane_data is None:
-            model = self.get_fitted_plane_model()
+            model = self.__get_fitted_plane_model()
 
             # the vector normal to the fitted plane
             v_n = np.array([model.coef_[0], model.coef_[1], -1])
@@ -171,7 +191,7 @@ class HyperKneeFinder:
         if what == 'shifted':
             return self.__shift_plane()
         elif what == 'fitted':
-            model = self.get_fitted_plane_model()
+            model = self.__get_fitted_plane_model()
             v_n = np.array([model.coef_[0], model.coef_[1], -1])
             return model.coef_[0], model.coef_[1], model.intercept_, v_n
         else:
@@ -184,12 +204,11 @@ class HyperKneeFinder:
         and the plane to which calculate the distance will be the fitted one, not the shifted one.
         This is used for finding the pseudo-convexity of the curve
         """
+        independent_data, dependent_data = self.__reshape_data(all_data=all_data)
 
         if all_data:
-            independent_data, dependent_data = self.__reshape_data()
             factor_x, factor_y, intercept, v_n = self.__get_plane_data()
         else:
-            independent_data, dependent_data = self.__reshape_data(all_data=all_data)
             factor_x, factor_y, intercept, v_n = self.__get_plane_data(what='fitted')
 
         dist_1 = independent_data * v_n[:2]
@@ -213,7 +232,7 @@ class HyperKneeFinder:
 
         return knee_point_at
 
-    def get_hyperkee_point(self, printout: bool = False) -> (float, float):
+    def get_hyperkee_point(self, printout: bool = False):
         """
         The x, y coordinates of the hyper knee point
         """
@@ -227,6 +246,9 @@ class HyperKneeFinder:
             else:
                 print(f"HyperKnee is at {hk_x}, {hk_y}")
 
+        # restore data type
+        hk_x = integer_or_float(hk_x)
+        hk_y = integer_or_float(hk_y)
         return hk_x, hk_y
 
     def __calculate_plane_points(self) -> (np.ndarray, np.ndarray, np.ndarray):
