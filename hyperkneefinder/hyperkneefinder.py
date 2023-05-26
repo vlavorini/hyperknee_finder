@@ -31,7 +31,7 @@ class HyperKneeFinder:
     def __init__(self, data_x: Union[list, np.ndarray], data_y: Union[list, np.ndarray],
                  data_z: np.ndarray,
                  name_x: Optional[str] = None, name_y: Optional[str] = None,
-                 clean_data: bool = True, clean_threshold: float = 0.8):
+                 clean_data: bool = True, clean_threshold: float = 0.75):
         self.X = data_x
         self.Y = data_y
         if name_x is not None and name_y is not None:
@@ -42,7 +42,7 @@ class HyperKneeFinder:
         else:
             self.Z = data_z.T
 
-    def __clean_data(self, data_z: np.ndarray, threshold: float = 0.75):
+    def __clean_data(self, data_z: np.ndarray, threshold: float):
         """
         Clean the data by ignoring the simil-plateau at the end of the matrix.
 
