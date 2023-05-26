@@ -96,7 +96,7 @@ class HyperKneeFinder:
         self.Z = new_z[:last_good_row, :].T
         self.X = self.X[:last_good_row]
 
-    def __reshape_data(self, all_data: bool = False):
+    def __reshape_data(self, all_data: bool = True):
         """
         Shape the data as independent (X and Y) and dependent (Z) for convenience of the Linear model
         which will be used.
