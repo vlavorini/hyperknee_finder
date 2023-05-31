@@ -49,14 +49,17 @@ class HyperKneeFinder:
         if clean_threshold != 0.75 and clean_data is False:
             warnings.warn("You set both clean_data=False and a value for clean_threshold."
                           "Note that the clean_threshold value will be ignored")
-        self.X = data_x
-        self.Y = data_y
+        self.raw_X = data_x
+        self.raw_Y = data_y
+        self.raw_Z = data_z.T
         if name_x is not None and name_y is not None:
             self.name_x = name_x
             self.name_y = name_y
         if clean_data:
             self.__clean_data(data_z, threshold=clean_threshold)
         else:
+            self.X = self.raw_X
+            self.Y = self.raw_Y
             self.Z = data_z.T
 
     def __clean_data(self, data_z: np.ndarray, threshold: float):
@@ -106,7 +109,7 @@ class HyperKneeFinder:
         except IndexError:
             raise ValueError ("No data available after cleaning phase. Try to change the 'clean_threshold' value.")
         new_z = data_z[:, :last_good_column]
-        self.Y = self.Y[:last_good_column]
+        self.Y = self.raw_Y[:last_good_column]
 
         # same for rows
         rows2delete = to_delete.sum(axis=1) == to_delete.shape[1]
@@ -114,7 +117,7 @@ class HyperKneeFinder:
         # will delete all the columns after the first where all the values are True
         last_good_row = np.argwhere(rows2delete)[0][0] - 1
         self.Z = new_z[:last_good_row, :].T
-        self.X = self.X[:last_good_row]
+        self.X = self.raw_X[:last_good_row]
 
     def __reshape_data(self, all_data: bool = True):
         """
@@ -252,11 +255,14 @@ class HyperKneeFinder:
         return hk_x, hk_y
 
     def __calculate_plane_points(self) -> (np.ndarray, np.ndarray, np.ndarray):
-        """A set of points belonging to the shifted plane, useful for plotting"""
+        """
+        A set of points belonging to the shifted plane, useful for plotting.
+        """
         factor_x, factor_y, new_intercept, _ = self.__shift_plane()
 
-        xp = np.tile(np.linspace(min(self.X), max(self.X), 61), (61, 1))
-        yp = np.tile(np.linspace(min(self.Y), max(self.Y), 61), (61, 1)).T
+        # for visualization purposes, we extend the plane to all the raw data domain
+        xp = np.tile(np.linspace(min(self.raw_X), max(self.raw_X), 61), (61, 1))
+        yp = np.tile(np.linspace(min(self.raw_Y), max(self.raw_Y), 61), (61, 1)).T
 
         zp = factor_x * xp + factor_y * yp + new_intercept
 
@@ -270,13 +276,13 @@ class HyperKneeFinder:
         - the hyper-knee point
         """
         knee_point_at = self.__max_dist_from_plane()
-        xx, yy = np.meshgrid(self.X, self.Y)
+        xx, yy = np.meshgrid(self.raw_X, self.raw_Y)
         independent_data, dependent_data = self.__reshape_data()
         xp, yp, zp = self.__calculate_plane_points()
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        ax.plot_surface(xx, yy, self.Z, linewidth=1, antialiased=True, alpha=0.5)
+        ax.plot_surface(xx, yy, self.raw_Z, linewidth=1, antialiased=True, alpha=0.5)
 
         if self.name_x is not None:
             ax.set_xlabel(self.name_x)
