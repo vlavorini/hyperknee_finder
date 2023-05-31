@@ -13,7 +13,9 @@ inter-dependant parameters. This tool is anyway able to find the optimal value o
 
 ![Plot of the HyperKnee](./notebooks/hk_plot.png)
 
-## Motivations for this tool
+In facts, HyperKnee Finder is a 2-d generalisation of the [KneeFinder](https://github.com/vlavorini/kneefinder) tool.
+
+## Motivations for HyperKnee Finder
 In many situations the parameters of an algorithm depends on each other.  What you usually do is to ignore this 
 dependency, and so you optimise the first parameter, then you use the found value to optimise the second parameter. 
 
