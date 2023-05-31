@@ -11,7 +11,7 @@ setup(
     description='A tool for optimizing two inter-dependent parameters.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/itsbilyatt/hyperknee_finder',
+    url='https://github.com/vlavorini/hyperknee_finder',
     author='Vincenzo Lavorini',
     author_email='vincenzo.lavorini@protonmail.ch',
     packages=['hyperkneefinder'],
