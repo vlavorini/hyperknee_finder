@@ -21,4 +21,4 @@ What you usually do is to optimise the first parameter, then you use the found v
 Let's see what happens in an example.
 
 
-[Plot of the HyperKnee](./notebooks/hk_plot.png)
+![Plot of the HyperKnee](./notebooks/hk_plot.png)
