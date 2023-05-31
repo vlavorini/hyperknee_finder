@@ -11,7 +11,7 @@ A more formal definition (from Satopää, Albrecht, Irwin, and Raghavan, 2011, p
 While usually this method is used for tuning one single parameter, nothing impeach to the same for  multiple, 
 inter-dependant parameters. This tool is anyway able to find the optimal value only for two parameters.
 
-![Plot of the HyperKnee](https://github.com/vlavorini/hyperknee_finder/blob/main/notebooks/hk_plot.png)
+![Plot of the HyperKnee](https://github.com/vlavorini/hyperknee_finder/blob/main/notebooks/hk_plot.png?raw=True)
 
 In facts, HyperKnee Finder is a 2-d generalisation of the [KneeFinder](https://github.com/vlavorini/kneefinder) tool.
 
@@ -46,7 +46,7 @@ hkf= HyperKneeFinder(X, Y, Z, name_x='parameter_1', name_y='parameter_2', clean_
 hkf.visualise_hyperknee()
 ```
 
-![Plot of the HyperKnee](https://github.com/vlavorini/hyperknee_finder/blob/main/notebooks/hk_plot2.png)
+![Plot of the HyperKnee](https://github.com/vlavorini/hyperknee_finder/blob/main/notebooks/hk_plot2.png?raw=True)
 
 Also with different pseudo-convexity:
 
@@ -66,4 +66,4 @@ hkf.visualise_hyperknee()
 ```
 
 
-![Plot of the HyperKnee](https://github.com/vlavorini/hyperknee_finder/blob/main/notebooks/hk_plot3.png)
+![Plot of the HyperKnee](https://github.com/vlavorini/hyperknee_finder/blob/main/notebooks/hk_plot3.png?raw=True)
