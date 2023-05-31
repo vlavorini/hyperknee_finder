@@ -15,6 +15,31 @@ inter-dependant parameters. This tool is anyway able to find the optimal value o
 
 In facts, HyperKnee Finder is a 2-d generalisation of the [KneeFinder](https://github.com/vlavorini/kneefinder) tool.
 
+## Install and usage
+
+to install ust use PIP:
+
+```python
+pip install HyperkneeFinder
+```
+
+The data has to be shaped in a proper way, i,e, X and Y should be 1-dimensional arrays, while Z should be 
+a 2-dimensional array. Each Z[i,j] should contain the Z value for X[i] and Y[j].
+
+To discover the HyperKnee point just call
+
+```python
+hkf= HyperKneeFinder(X, Y, Z)
+hyperknee_coordinates = hfk.get_hyperknee_point()
+```
+
+You can also plot the data for a crosscheck:
+
+```python
+hkf.visualise_hyperknee()
+```
+Please check the examples in this documentation.
+
 ## Motivations for HyperKnee Finder
 In many situations the parameters of an algorithm depends on each other.  What you usually do is to ignore this 
 dependency, and so you optimise the first parameter, then you use the found value to optimise the second parameter. 
@@ -23,6 +48,13 @@ Acting like this, in general, does not guarantee you to land on the optimal comb
 
 Indeed, you have to evaluate all the possible combination of the two parameters, and at that point
 you can make your choice.
+
+
+## What's behind the scenes
+
+Similarly to [KneeFinder](https://github.com/vlavorini/kneefinder), this tool fits a 2 dimensional linear function
+(i.e., a plane) to the (cleaned) data, then search for the point with maximum distance to the plane. Note that only the 
+points internal to the pseudo-convexity of the curve will be accounted in this last step.
 
 
 ## Examples

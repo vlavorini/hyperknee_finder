@@ -7,7 +7,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='HyperkneeFinder',
-    version='0.0.2',
+    version='0.0.3',
     description='A tool for optimizing two inter-dependent parameters.',
     long_description=long_description,
     long_description_content_type='text/markdown',
